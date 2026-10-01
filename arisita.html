@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Octubre - Un dato curioso al día</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #2d2433;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,.55), transparent 35%),
+        linear-gradient(135deg, #ffd7bd, #f6c7d7, #d8c7f2);
+      padding: 35px 18px;
+    }
+
+    .container {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 6vw, 4.3rem);
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      opacity: .75;
+      margin-bottom: 32px;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+    }
+
+    .day {
+      min-height: 120px;
+      border: 1px solid rgba(255,255,255,.75);
+      border-radius: 20px;
+      background: rgba(255,255,255,.52);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px rgba(80,50,80,.10);
+      cursor: pointer;
+      transition: .2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #2d2433;
+      padding: 12px;
+    }
+
+    .day:hover {
+      transform: translateY(-5px) scale(1.02);
+      background: rgba(255,255,255,.78);
+      box-shadow: 0 16px 30px rgba(80,50,80,.16);
+    }
+
+    .number {
+      font-size: 2rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .month {
+      margin-top: 7px;
+      font-size: .74rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: .58;
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-size: .72rem;
+      opacity: .42;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(30,20,35,.48);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(560px, 100%);
+      background: rgba(255,255,255,.96);
+      border-radius: 28px;
+      padding: 34px 28px 28px;
+      box-shadow: 0 25px 70px rgba(35,20,45,.28);
+    }
+
+    .modal-date {
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-size: .85rem;
+      opacity: .55;
+      margin-bottom: 18px;
+    }
+
+    /* Todos los días normales */
+    .modal-phrase {
+      font-size: clamp(1.25rem, 4vw, 1.8rem);
+      line-height: 1.5;
+      font-weight: 650;
+    }
+
+    /* SOLO para el día 31 */
+    .modal-phrase.poema {
+      white-space: pre-line;
+      font-size: 1.08rem;
+      line-height: 1.55;
+      font-weight: 500;
+      text-align: center;
+      max-height: 62vh;
+      overflow-y: auto;
+      padding: 0 4px;
+    }
+
+    .close {
+      margin-top: 28px;
+      border: none;
+      border-radius: 999px;
+      padding: 11px 22px;
+      font-size: .95rem;
+      background: #2d2433;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .footer {
+      margin-top: 28px;
+      font-size: .8rem;
+      opacity: .42;
+    }
+
+    @media (max-width: 850px) {
+      .calendar {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .calendar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .day {
+        min-height: 110px;
+      }
+
+      .modal-card {
+        padding: 28px 20px 22px;
+      }
+
+      .modal-phrase.poema {
+        font-size: .98rem;
+        line-height: 1.5;
+        max-height: 64vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="container">
+
+    <h1>Octubre</h1>
+
+    <p class="subtitle">
+      Cada dia tens un dato curioso, solo pa usted
+    </p>
+
+    <section class="calendar" id="calendar"></section>
+
+    <p class="footer">
+      Si pulses a cada dia et sortira un dato curioso, no facis trampas
+    </p>
+
+  </main>
+
+  <div class="modal" id="modal">
+    <div class="modal-card">
+
+      <div class="modal-date" id="modalDate"></div>
+
+      <div class="modal-phrase" id="modalPhrase"></div>
+
+      <button class="close" id="closeButton">
+        Cerrar
+      </button>
+
+    </div>
+  </div>
+
+  <script>
+
+    const frases = {
+
+      1: "Las nutrias marinas a veces duermen cogidas de la mano para evitar separarse mientras flotan. 🦦💗 bombon",
+
+      2: "Los delfines utilizan silbidos únicos para identificarse entre ellos, casi como si cada uno tuviera su propio nombre. 🐬 TESTIMOO",
+
+      3: "Algunos pingüinos pueden reconocer la llamada de su pareja incluso entre cientos de otros pingüinos. 🐧❤️ guapetonaaa",
+
+      4: "Las mariposas pueden saborear las plantas utilizando receptores que tienen en sus patas. 🦋 AMORSITOOO",
+
+      5: "Los elefantes muestran comportamientos de consuelo hacia otros miembros de su grupo cuando están alterados. 🐘💗 la mas bonita",
+
+      6: "Los gatos pueden reconocer la voz de las personas con las que viven, aunque a veces decidan no reaccionar. 🐱 com el gustavinyo",
+
+      7: "Los caballitos de mar pueden realizar pequeños rituales de cortejo en los que nadan juntos durante varios minutos. 🌊💗 el fem?",
+
+      8: "Algunos cisnes forman vínculos de pareja que pueden durar muchos años. 🦢❤️ com nosaltress",
+
+      9: "Las abejas se comunican mediante una especie de baile que indica a las demás dónde pueden encontrar flores. 🐝🌸 a me casa jeje",
+
+      10: "Los perros pueden reconocer muchas palabras y también reaccionan al tono emocional con el que les hablamos. 🐶💗",
+
+      11: "Si supieras cómo te ven las personas que te quieren, probablemente te gustarías todavía más. I si et veiguessis com et veig jo t'enamoraries de tu mateixa",
+
+      12: "Algunas aves cantan canciones especiales durante el cortejo para llamar la atención de una posible pareja. 🐦🎶",
+
+      13: "En los caballitos de mar son los machos quienes llevan los embriones hasta que nacen las crías. 🐴🌊",
+
+      14: "Una nube aparentemente ligera puede contener cientos de toneladas de agua suspendidas en pequeñas gotas. ☁️",
+
+      15: "Eres de esas personas con las que el tiempo pasa demasiado rápido. (El que em passa)",
+
+      16: "Los búhos tienen el cuello tan flexible que pueden girar la cabeza hasta unos 270 grados. 🦉",
+
+      17: "Algunas especies de loros forman vínculos sociales muy fuertes y pasan mucho tiempo cerca de su compañero. 🦜💞",
+
+      18: "Eres mucho más interesante de lo que seguramente crees. Y si amor, ho penso en serio.",
+
+      19: "Las vacas pueden formar amistades y suelen preferir pasar tiempo cerca de determinados individuos de su grupo. 🐄💗",
+
+      20: "Los colibríes pueden batir sus alas decenas de veces por segundo y son capaces de mantenerse suspendidos en el aire. 🌸",
+
+      21: "Los recuerdos asociados a emociones intensas suelen permanecer durante mucho tiempo, por eso algunos momentos con personas especiales son tan difíciles de olvidar. 💗✨",
+
+      22: "Contigo cualquier plan parece mejor. (De fet ho és)",
+
+      23: "Cuando escuchamos una canción ligada a un momento especial, nuestro cerebro puede recuperar recuerdos y emociones asociados a ella. 🎶💗",
+
+      24: "Las estrellas que vemos en el cielo pueden estar tan lejos que su luz ha viajado durante años antes de llegar hasta nosotros. ✨",
+
+      25: "Algunas parejas de aves construyen juntas el nido en el que después cuidarán a sus crías. 🐦🏡",
+
+      26: "Saturno es tan poco denso que, si existiera un océano suficientemente grande, el planeta flotaría en él. 🪐",
+
+      27: "Tienes una manera de hablar que da mucha tranquilidad. Perque ets llesta i quan parles se nota.",
+
+      28: "Los camaleones no solo cambian de color para camuflarse: también lo utilizan para comunicarse con otros camaleones. 🦎",
+
+      29: "Tienes una forma de sonreír que cambia el ambiente. Fas el dia més bonic cada dia.",
+
+      30: "Un abrazo afectuoso puede favorecer la liberación de oxitocina, una sustancia relacionada con los vínculos sociales. 🤍",
+
+      31: `Llegó el final de octubre,
+pero no el de mis ganas de pensarte,
+porque hay personas que no caben en un mes,
+ni en un día,
+ni en una simple frase.
+
+Hay algo en ti
+que hace más bonito lo cotidiano,
+que convierte cualquier momento pequeño
+en un recuerdo que merece quedarse.
+
+Y si pudiera elegir
+qué guardar de todos estos días,
+guardaría tu sonrisa,
+tu forma de ser,
+y la tranquilidad de tenerte cerca.
+
+Porque entre tantos días del calendario,
+tantas horas y tantos momentos,
+tú sigues siendo
+mi pensamiento favorito.
+
+Y aunque hoy termine octubre,
+hay algo que tengo muy claro:
+si pudiera empezar el mes otra vez,
+volvería a elegir
+cada día pensar en volver a verte a ti(quan tornis).`
+
+    };
+
+    const calendar = document.getElementById("calendar");
+    const modal = document.getElementById("modal");
+    const modalDate = document.getElementById("modalDate");
+    const modalPhrase = document.getElementById("modalPhrase");
+    const closeButton = document.getElementById("closeButton");
+
+    for (let dia = 1; dia <= 31; dia++) {
+
+      const button = document.createElement("button");
+
+      button.className = "day";
+
+      button.innerHTML = `
+        <span class="number">${dia}</span>
+        <span class="month">Octubre</span>
+        <span class="hint">Descubrir 💗</span>
+      `;
+
+      button.addEventListener("click", () => {
+
+        modalDate.textContent = `${dia} de octubre`;
+        modalPhrase.textContent = frases[dia];
+
+        if (dia === 31) {
+          modalPhrase.classList.add("poema");
+        } else {
+          modalPhrase.classList.remove("poema");
+        }
+
+        modal.classList.add("open");
+
+      });
+
+      calendar.appendChild(button);
+    }
+
+    function cerrarModal() {
+      modal.classList.remove("open");
+    }
+
+    closeButton.addEventListener("click", cerrarModal);
+
+    modal.addEventListener("click", e => {
+      if (e.target === modal) {
+        cerrarModal();
+      }
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") {
+        cerrarModal();
+      }
+    });
+
+  </script>
+
+</body>
+</html>
